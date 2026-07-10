@@ -1,0 +1,45 @@
+name: Init template
+
+# One-shot workflow (ADR-011): runs on the first push of a repo generated from
+# this template. Derives the miniapp id from the repo name (miniapp-<id>),
+# replaces the placeholders, commits, and removes itself. Skips on the template.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  init:
+    if: ${{ !github.event.repository.is_template }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Substitute placeholders
+        run: |
+          set -euo pipefail
+          REPO="${{ github.event.repository.name }}"
+          ID="${REPO#miniapp-}"                 # miniapp-payments -> payments
+          NAME="$(echo "$ID" | sed -E 's/(^|[-_])([a-z])/\U\2/g')"  # payments -> Payments
+          OWNER="${{ github.repository_owner }}"
+          echo "id=$ID name=$NAME owner=$OWNER"
+          grep -rlZ '__MINIAPP_ID__\|__MINIAPP_NAME__\|__MINIAPP_OWNER__' . \
+            --exclude-dir=.git --exclude-dir=node_modules \
+            | xargs -0 -r sed -i \
+              -e "s/__MINIAPP_ID__/$ID/g" \
+              -e "s/__MINIAPP_NAME__/$NAME/g" \
+              -e "s/__MINIAPP_OWNER__/$OWNER/g"
+
+      - name: Remove this workflow (one-shot)
+        run: rm -f .github/workflows/init-template.yml
+
+      - name: Commit
+        run: |
+          git config user.name "backstage-scaffolder"
+          git config user.email "scaffolder@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: initialize miniapp from template" || echo "nothing to commit"
+          git push

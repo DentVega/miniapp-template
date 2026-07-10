@@ -1,0 +1,39 @@
+name: Publish miniapp
+
+# Build the federated chunk and publish it to Backstage (ADR-016).
+# __MINIAPP_ID__ is substituted by init-template.yml (ADR-011) when generated.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install deps (GitHub Packages)
+        run: pnpm install --frozen-lockfile=false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build chunk
+        run: pnpm exec react-native webpack-bundle --platform android --entry-file src/Entry.tsx --bundle-output build/__MINIAPP_ID__.container.js.bundle --dev false
+
+      - name: Zip build output
+        run: cd build && zip -r ../build.zip .
+
+      - name: Publish to Backstage
+        run: node scripts/publish.mjs build.zip
+        env:
+          BACKSTAGE_URL: ${{ secrets.BACKSTAGE_URL }}
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}

@@ -1,0 +1,10 @@
+{
+  "id": "__MINIAPP_ID__",
+  "version": "0.1.0",
+  "entry": "./Entry",
+  "shared": [
+    { "name": "react", "requiredRange": "^18.3.0", "singleton": true },
+    { "name": "react-native", "requiredRange": "^0.76.0", "singleton": true }
+  ],
+  "capabilities": ["session:whoami"]
+}
