@@ -1,0 +1,6 @@
+# Miniapp-owned files — the sync must NEVER overwrite these.
+src/Screen.tsx
+manifest.json
+README.md
+README.es.md
+.template-sync

@@ -1,0 +1,107 @@
+name: Template sync
+
+# 3-way merge of the current template into this miniapp, opened as a PR (Capa 2).
+# Explicit merge-base = baseSha in .template-sync, because template-generated repos
+# share no git ancestry with the template. Never overwrites files listed in
+# .templatesyncignore. Dispatched on demand (e.g. from Backstage). No extra secrets.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    # Never run on the template repo itself.
+    if: ${{ !github.event.repository.is_template }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read marker
+        id: marker
+        run: |
+          set -euo pipefail
+          if [ ! -f .template-sync ]; then
+            echo "::error::.template-sync missing — this repo is not enrolled for template sync. Backfill it first."
+            exit 1
+          fi
+          TEMPLATE_REPO="$(jq -r .templateRepo .template-sync)"
+          BASE="$(jq -r .baseSha .template-sync)"
+          echo "template_repo=$TEMPLATE_REPO" >> "$GITHUB_OUTPUT"
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch template
+        id: fetch
+        run: |
+          set -euo pipefail
+          git remote add template "https://github.com/${{ steps.marker.outputs.template_repo }}.git"
+          git fetch template main
+          HEAD_SHA="$(git rev-parse template/main)"
+          echo "head=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: 3-way merge (explicit base) + open PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ steps.marker.outputs.base }}
+          TEMPLATE_HEAD: ${{ steps.fetch.outputs.head }}
+        run: |
+          set -euo pipefail
+
+          if [ "$BASE" = "$TEMPLATE_HEAD" ]; then
+            echo "Template unchanged since baseSha — nothing to sync."
+            exit 0
+          fi
+
+          git config user.name "backstage-template-sync"
+          git config user.email "template-sync@users.noreply.github.com"
+
+          SHORT="$(git rev-parse --short "$TEMPLATE_HEAD")"
+          BRANCH="sync/template-$SHORT"
+
+          # Real 3-way merge with an explicit merge-base. --write-tree emits the
+          # merged tree OID (first line); on conflicts it still writes a tree whose
+          # conflicted files contain <<<<<<< markers and exits non-zero.
+          set +e
+          MERGE_OUT="$(git merge-tree --write-tree --merge-base="$BASE" HEAD "$TEMPLATE_HEAD")"
+          CONFLICTED=$?
+          set -e
+          TREE="$(echo "$MERGE_OUT" | head -n1)"
+
+          # Materialize the merged tree onto a fresh branch off current HEAD.
+          git switch -c "$BRANCH"
+          git read-tree "$TREE"
+          git checkout-index -a -f
+
+          # Ignore-list: restore the miniapp's own version of protected paths.
+          if [ -f .templatesyncignore ]; then
+            while IFS= read -r line; do
+              case "$line" in ''|\#*) continue ;; esac
+              git checkout HEAD -- "$line" 2>/dev/null || true
+            done < .templatesyncignore
+          fi
+
+          # Bump the marker to the newly-synced template SHA.
+          jq --arg sha "$TEMPLATE_HEAD" '.baseSha = $sha' .template-sync > .template-sync.tmp
+          mv .template-sync.tmp .template-sync
+
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No file changes after merge — nothing to open a PR for."
+            exit 0
+          fi
+
+          if [ "$CONFLICTED" -ne 0 ]; then
+            BODY="⚠️ Merge con **conflictos** — resuélvelos en este branch antes de mergear. Base \`$BASE\` → template \`$SHORT\`."
+          else
+            BODY="Merge 3-way limpio desde el template (\`$SHORT\`). Revisa el diff y el CI antes de mergear."
+          fi
+
+          git commit -m "sync: template @ $SHORT"
+          git push -u origin "$BRANCH"
+          gh pr create --title "Sync desde template @ $SHORT" --body "$BODY" \
+            --base main --head "$BRANCH"
