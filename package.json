@@ -1,5 +1,5 @@
 {
-  "name": "@org/miniapp-__MINIAPP_ID__",
+  "name": "@dentvega/miniapp-__MINIAPP_ID__",
   "version": "0.1.0",
   "private": true,
   "description": "__MINIAPP_NAME__ — miniapp federada (Re.Pack remote). Generada desde miniapp-template.",
@@ -10,8 +10,8 @@
     "test": "jest"
   },
   "dependencies": {
-    "@org/miniapp-contract": "^0.1.0",
-    "@org/ui-kit": "^0.1.0"
+    "@dentvega/miniapp-contract": "^0.1.0",
+    "@dentvega/ui-kit": "^0.1.0"
   },
   "peerDependencies": {
     "react": "*",

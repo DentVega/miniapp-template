@@ -41,7 +41,7 @@ export default Repack.defineRspackConfig({
       shared: {
         react: { singleton: true, eager: false, requiredVersion: '18.3.1' },
         'react-native': { singleton: true, eager: false, requiredVersion: '0.76.6' },
-        '@org/ui-kit': { singleton: false, requiredVersion: '^0.1.0' },
+        '@dentvega/ui-kit': { singleton: false, requiredVersion: '^0.1.0' },
       },
     }),
   ],
