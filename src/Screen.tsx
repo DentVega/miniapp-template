@@ -1,10 +1,10 @@
 import React from 'react';
 import {SafeAreaView, StyleSheet} from 'react-native';
-import {AppText, Box, Card, useTheme} from '@org/ui-kit';
+import {AppText, Box, Card, useTheme} from '@dentvega/ui-kit';
 
 /**
  * Placeholder screen. Replace with your feature.
- * Uses @org/ui-kit primitives so every miniapp shares the design system.
+ * Uses @dentvega/ui-kit primitives so every miniapp shares the design system.
  */
 export function Screen(): React.JSX.Element {
   const theme = useTheme();
