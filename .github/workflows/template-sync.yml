@@ -74,8 +74,7 @@ jobs:
 
           # Materialize the merged tree onto a fresh branch off current HEAD.
           git switch -c "$BRANCH"
-          git read-tree "$TREE"
-          git checkout-index -a -f
+          git read-tree -u --reset "$TREE"
 
           # Ignore-list: restore the miniapp's own version of protected paths.
           if [ -f .templatesyncignore ]; then
