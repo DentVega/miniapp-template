@@ -1,0 +1,62 @@
+name: Publish miniapp (reusable)
+
+# Reusable build+publish for ANY miniapp (ADR-016). Callers reference this with:
+#
+#   jobs:
+#     publish:
+#       uses: DentVega/miniapp-template/.github/workflows/publish.yml@main
+#       secrets: inherit
+#
+# Fixing this file fixes the CI for every miniapp at once (they track @main) —
+# no per-repo update needed. The miniapp id is read from manifest.json, so this
+# workflow is fully generic (no placeholder substitution).
+
+on:
+  workflow_call:
+    secrets:
+      BACKSTAGE_URL:
+        required: true
+      PUBLISH_TOKEN:
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install deps (GitHub Packages)
+        # pnpm ignores the ${TOKEN} in a committed .npmrc; write the auth to a
+        # user-level ~/.npmrc with the literal token. @dentvega/* are public, so
+        # the automatic GITHUB_TOKEN suffices to read them.
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
+          pnpm install --frozen-lockfile=false
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build chunk
+        run: |
+          ID=$(node -p "require('./manifest.json').id")
+          echo "Building miniapp: $ID"
+          pnpm exec react-native webpack-bundle --platform android \
+            --entry-file src/Entry.tsx \
+            --bundle-output "build/${ID}.container.js.bundle" --dev false
+
+      - name: Zip build output
+        # Zip the FLAT contents of the emitted dir (container + chunks at the
+        # root) so the host can resolve chunks beside the container.
+        run: cd build/generated/android && zip -r "$GITHUB_WORKSPACE/build.zip" .
+
+      - name: Publish to Backstage
+        run: node scripts/publish.mjs build.zip
+        env:
+          BACKSTAGE_URL: ${{ secrets.BACKSTAGE_URL }}
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
