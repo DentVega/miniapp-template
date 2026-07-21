@@ -7,6 +7,8 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
+  # Lets Backstage's "Deploy" button trigger a build+publish on demand.
+  workflow_dispatch:
 
 jobs:
   publish:
