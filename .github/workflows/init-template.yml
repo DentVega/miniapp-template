@@ -33,6 +33,15 @@ jobs:
               -e "s/__MINIAPP_NAME__/$NAME/g" \
               -e "s/__MINIAPP_OWNER__/$OWNER/g"
 
+      - name: Write template-sync marker
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BASE="$(gh api repos/DentVega/miniapp-template/commits/main --jq .sha)"
+          printf '{\n  "templateRepo": "DentVega/miniapp-template",\n  "baseSha": "%s"\n}\n' "$BASE" > .template-sync
+          echo "wrote .template-sync baseSha=$BASE"
+
       - name: Remove this workflow (one-shot)
         run: rm -f .github/workflows/init-template.yml
 
