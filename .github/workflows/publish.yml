@@ -47,9 +47,18 @@ jobs:
         # check valida el skew. Rollout-safe: sin contract publicado → skip (no rompe).
         # Para bloquear publishes incompatibles, setear la repo/org var COMPAT_ENFORCE=1
         # (tras publicar el contract + backfillear la flota).
+        #
+        # GUARD (Capa 1 vs Capa 2 lag): este workflow (@main) se activa para todas las
+        # miniapps al instante, pero los scripts llegan a cada repo vía template-sync
+        # (con lag). Si una miniapp todavía no sincronizó, los scripts no existen →
+        # se saltea el gate en vez de romper el publish. Al sincronizar, el gate se activa.
         run: |
-          node scripts/gen-manifest-shared.mjs
-          node scripts/check-compat.mjs
+          if [ -f scripts/gen-manifest-shared.mjs ] && [ -f scripts/check-compat.mjs ]; then
+            node scripts/gen-manifest-shared.mjs
+            node scripts/check-compat.mjs
+          else
+            echo "compat gate scripts not present (miniapp not yet synced) — skipping"
+          fi
         env:
           BACKSTAGE_URL: ${{ secrets.BACKSTAGE_URL }}
           COMPAT_ENFORCE: ${{ vars.COMPAT_ENFORCE }}
