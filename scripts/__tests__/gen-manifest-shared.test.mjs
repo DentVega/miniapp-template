@@ -1,0 +1,20 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { deriveShared } from "../gen-manifest-shared.mjs";
+
+// contract.shared del host; resolveVersion simula lo instalado en la miniapp.
+const contractShared = { react: "18.3.1", "react-native": "0.76.6", zustand: "5.0.14" };
+
+test("deriveShared: ^versión resuelta para cada shared que la miniapp tiene instalado", () => {
+  const resolve = (name) => (name === "zustand" ? null : ({ react: "18.3.1", "react-native": "0.76.9" }[name]));
+  const out = deriveShared(contractShared, resolve);
+  // react + react-native están; zustand NO (resolve → null) → se omite
+  assert.deepEqual(out, [
+    { name: "react", requiredRange: "^18.3.1", singleton: true },
+    { name: "react-native", requiredRange: "^0.76.9", singleton: true },
+  ]);
+});
+
+test("deriveShared: vacío si la miniapp no comparte nada", () => {
+  assert.deepEqual(deriveShared(contractShared, () => null), []);
+});
