@@ -17,7 +17,7 @@ const require = createRequire(import.meta.url);
 /** Para cada shared del host que la miniapp tiene instalado, emite ^versión resuelta. */
 export function deriveShared(contractShared, resolveVersion) {
   const out = [];
-  for (const name of Object.keys(contractShared)) {
+  for (const name of Object.keys(contractShared ?? {})) {
     const v = resolveVersion(name);
     if (v) out.push({ name, requiredRange: `^${v}`, singleton: true });
   }

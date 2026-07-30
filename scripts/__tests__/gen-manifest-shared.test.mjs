@@ -18,3 +18,7 @@ test("deriveShared: ^versión resuelta para cada shared que la miniapp tiene ins
 test("deriveShared: vacío si la miniapp no comparte nada", () => {
   assert.deepEqual(deriveShared(contractShared, () => null), []);
 });
+
+test("deriveShared: contract malformado (shared undefined) NO tira → []", () => {
+  assert.deepEqual(deriveShared(undefined, () => "1.0.0"), []);
+});

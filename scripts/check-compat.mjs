@@ -11,13 +11,14 @@ import path from "node:path";
 
 /** Compara el manifest.shared de la miniapp contra lo que provee el host. */
 export function checkSkew(contractShared, manifestShared) {
+  const provided = contractShared ?? {}; // crash-proof si el contract viene malformado
   const incompatible = [];
   for (const dep of manifestShared) {
-    const provided = contractShared[dep.name];
-    if (provided === undefined) {
+    const hostVersion = provided[dep.name];
+    if (hostVersion === undefined) {
       incompatible.push({ name: dep.name, provided: null, requiredRange: dep.requiredRange });
-    } else if (!semver.satisfies(provided, dep.requiredRange, { includePrerelease: false })) {
-      incompatible.push({ name: dep.name, provided, requiredRange: dep.requiredRange });
+    } else if (!semver.satisfies(hostVersion, dep.requiredRange, { includePrerelease: false })) {
+      incompatible.push({ name: dep.name, provided: hostVersion, requiredRange: dep.requiredRange });
     }
   }
   return { compatible: incompatible.length === 0, incompatible };

@@ -26,3 +26,9 @@ test("dep que el host NO provee → incompatible (missing)", () => {
   assert.equal(r.compatible, false);
   assert.equal(r.incompatible[0].name, "react-native-svg");
 });
+
+test("contract malformado (shared undefined) NO tira — trata todo como missing", () => {
+  const r = checkSkew(undefined, [{ name: "react", requiredRange: "^18.3.0", singleton: true }]);
+  assert.equal(r.compatible, false);
+  assert.equal(r.incompatible[0].provided, null);
+});
