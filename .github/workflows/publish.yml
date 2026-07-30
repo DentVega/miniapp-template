@@ -42,6 +42,18 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Derive truthful manifest.shared + compat gate
+        # gen reescribe manifest.shared desde las deps reales ∩ host contract;
+        # check valida el skew. Rollout-safe: sin contract publicado → skip (no rompe).
+        # Para bloquear publishes incompatibles, setear la repo/org var COMPAT_ENFORCE=1
+        # (tras publicar el contract + backfillear la flota).
+        run: |
+          node scripts/gen-manifest-shared.mjs
+          node scripts/check-compat.mjs
+        env:
+          BACKSTAGE_URL: ${{ secrets.BACKSTAGE_URL }}
+          COMPAT_ENFORCE: ${{ vars.COMPAT_ENFORCE }}
+
       - name: Build chunk
         run: |
           ID=$(node -p "require('./manifest.json').id")
