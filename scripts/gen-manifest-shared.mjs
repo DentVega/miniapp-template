@@ -11,6 +11,7 @@ import { createRequire } from "node:module";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { execSync } from "node:child_process";
 
 const require = createRequire(import.meta.url);
 
@@ -30,6 +31,35 @@ function installedVersion(name) {
     return require(`${name}/package.json`).version;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Módulos nativos que la miniapp autolinkea (del output de `react-native config`).
+ * Un dep es nativo si tiene config de plataforma (android o ios) no-null.
+ */
+export function parseAutolinkedNatives(rnConfig) {
+  const deps = rnConfig?.dependencies ?? {};
+  return Object.entries(deps)
+    .filter(([, d]) => {
+      const p = d?.platforms ?? {};
+      return (p.android != null) || (p.ios != null);
+    })
+    .map(([name]) => name);
+}
+
+/** Corre `react-native config` y devuelve los natives autolinkeados (best-effort → []). */
+function miniappNativeModules() {
+  try {
+    const raw = execSync("pnpm exec react-native config", {
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    return parseAutolinkedNatives(JSON.parse(raw));
+  } catch (err) {
+    console.warn(`gen-manifest-shared: react-native config failed (${err}) — nativeModules: []`);
+    return [];
   }
 }
 
@@ -53,7 +83,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
     manifest.shared = deriveShared(contract.shared, installedVersion);
     manifest.minHostContract = { reactNative: contract.reactNative, contractVersion: contract.contractVersion };
+    manifest.nativeModules = miniappNativeModules();
     writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
-    console.log(`gen-manifest-shared: derived ${manifest.shared.length} shared dep(s) from contract v${contract.contractVersion}`);
+    console.log(`gen-manifest-shared: derived ${manifest.shared.length} shared dep(s) from contract v${contract.contractVersion} + ${manifest.nativeModules.length} native(s)`);
   }
 }
