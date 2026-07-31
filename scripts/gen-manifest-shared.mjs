@@ -54,6 +54,7 @@ function miniappNativeModules() {
     const raw = execSync("pnpm exec react-native config", {
       encoding: "utf8",
       maxBuffer: 64 * 1024 * 1024,
+      timeout: 30_000, // un `react-native config` colgado degrada a [] (catch), no traba el CI
       stdio: ["ignore", "pipe", "ignore"],
     });
     return parseAutolinkedNatives(JSON.parse(raw));
