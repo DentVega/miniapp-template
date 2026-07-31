@@ -24,6 +24,12 @@ export function checkSkew(contractShared, manifestShared) {
   return { compatible: incompatible.length === 0, incompatible };
 }
 
+/** Natives que la miniapp necesita y el host NO provee (set-difference). Crash-proof. */
+export function checkNatives(contractNativeModules, manifestNativeModules) {
+  const host = new Set(contractNativeModules ?? []);
+  return (manifestNativeModules ?? []).filter((m) => !host.has(m));
+}
+
 // --- CLI ---
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const baseUrl = process.env.BACKSTAGE_URL;
@@ -41,12 +47,16 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   if (!contract) process.exit(0); // rollout-safe: sin contract, no bloquea
 
   const manifest = JSON.parse(readFileSync(path.resolve("manifest.json"), "utf8"));
-  const { compatible, incompatible } = checkSkew(contract.shared, manifest.shared ?? []);
+  const skew = checkSkew(contract.shared, manifest.shared ?? []);
+  const missingNatives = checkNatives(contract.nativeModules, manifest.nativeModules ?? []);
+  const compatible = skew.compatible && missingNatives.length === 0;
   if (compatible) {
     console.log(`check-compat: OK vs host contract v${contract.contractVersion}`);
     process.exit(0);
   }
-  const detail = incompatible.map((e) => `${e.name} (host ${e.provided ?? "MISSING"}, needs ${e.requiredRange})`).join("; ");
+  const skewDetail = skew.incompatible.map((e) => `${e.name} (host ${e.provided ?? "MISSING"}, needs ${e.requiredRange})`);
+  const nativeDetail = missingNatives.map((n) => `${n} (native module not in host)`);
+  const detail = [...skewDetail, ...nativeDetail].join("; ");
   const msg = `check-compat: INCOMPATIBLE with host contract v${contract.contractVersion} — ${detail}`;
   if (enforce) { console.error(`${msg}\n[COMPAT_ENFORCE=1 → failing the build]`); process.exit(1); }
   console.warn(`${msg}\n[warn mode — set COMPAT_ENFORCE=1 to block]`);

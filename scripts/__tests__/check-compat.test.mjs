@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkSkew } from "../check-compat.mjs";
+import { checkSkew, checkNatives } from "../check-compat.mjs";
 
 const contractShared = { "react-native": "0.76.6", react: "18.3.1" };
 
@@ -31,4 +31,18 @@ test("contract malformado (shared undefined) NO tira — trata todo como missing
   const r = checkSkew(undefined, [{ name: "react", requiredRange: "^18.3.0", singleton: true }]);
   assert.equal(r.compatible, false);
   assert.equal(r.incompatible[0].provided, null);
+});
+
+const hostNatives = ["react-native-screens", "react-native-safe-area-context"];
+
+test("checkNatives: [] cuando todos los natives de la miniapp están en el host", () => {
+  assert.deepEqual(checkNatives(hostNatives, ["react-native-screens"]), []);
+});
+
+test("checkNatives: lista los natives faltantes", () => {
+  assert.deepEqual(checkNatives(hostNatives, ["react-native-screens", "react-native-svg"]), ["react-native-svg"]);
+});
+
+test("checkNatives: crash-proof si contractNatives viene undefined", () => {
+  assert.deepEqual(checkNatives(undefined, ["react-native-svg"]), ["react-native-svg"]);
 });
