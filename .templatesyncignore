@@ -4,3 +4,13 @@ manifest.json
 README.md
 README.es.md
 .template-sync
+
+# CI workflows — thin-caller model: the real build+publish logic lives in the
+# reusable publish.yml @main (ci.yml just calls it), so the miniapp's local copies
+# don't need syncing. Also, GitHub refuses to let the sync token push changes to
+# `.github/workflows/*` without the `workflows` permission — protecting them here
+# avoids that wall. The gate reaches miniapps via publish.yml@main + the synced
+# scripts/ (which ARE synced, since they're not workflow files).
+.github/workflows/publish.yml
+.github/workflows/ci.yml
+.github/workflows/template-sync.yml
