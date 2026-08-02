@@ -80,7 +80,12 @@ jobs:
           if [ -f .templatesyncignore ]; then
             while IFS= read -r line; do
               case "$line" in ''|\#*) continue ;; esac
-              git checkout HEAD -- "$line" 2>/dev/null || true
+              # Restore the miniapp's own version if it has one; otherwise the file
+              # was newly created by the template merge → remove it (the checkout
+              # only restores paths present in HEAD, so it can't drop a created file).
+              git checkout HEAD -- "$line" 2>/dev/null \
+                || git rm -f --ignore-unmatch -- "$line" >/dev/null 2>&1 \
+                || true
             done < .templatesyncignore
           fi
 
