@@ -1,0 +1,54 @@
+name: Compat check (reusable)
+
+# Chequeo de compatibilidad miniapp→host para correr EN PRs (shift-left).
+# No buildea ni publica: instala deps, re-deriva el manifest y corre el gate.
+# El gate de publish (publish.yml) sigue siendo la red final post-merge.
+#
+# Fijar este archivo arregla el PR check de todas las miniapps a la vez
+# (referencian @main), igual que publish.yml.
+
+on:
+  workflow_call:
+    secrets:
+      BACKSTAGE_URL:
+        required: true
+
+jobs:
+  compat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install deps (GitHub Packages)
+        # pnpm ignora el ${TOKEN} de un .npmrc committeado; escribimos la auth a
+        # un ~/.npmrc con el token literal. @dentvega/* son públicos, así que el
+        # GITHUB_TOKEN automático alcanza para leerlos.
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
+          pnpm install --frozen-lockfile=false
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compat gate (miniapp → host contract)
+        # Mismo GUARD que publish.yml: si los scripts todavía no llegaron a este
+        # repo (miniapp no sincronizada), se saltea en vez de romper el check.
+        # gen re-deriva manifest.shared + nativeModules de las deps reales; check
+        # falla (exit 1) si hay skew o un nativo que el host no tiene.
+        # COMPAT_ENFORCE=1 FIJO: un check que solo advierte no sirve como gate de PR.
+        run: |
+          if [ -f scripts/gen-manifest-shared.mjs ] && [ -f scripts/check-compat.mjs ]; then
+            node scripts/gen-manifest-shared.mjs
+            node scripts/check-compat.mjs
+          else
+            echo "compat gate scripts not present (miniapp not yet synced) — skipping"
+          fi
+        env:
+          BACKSTAGE_URL: ${{ secrets.BACKSTAGE_URL }}
+          COMPAT_ENFORCE: "1"
