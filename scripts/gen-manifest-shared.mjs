@@ -12,6 +12,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { execSync } from "node:child_process";
+import semver from "semver";
 
 const require = createRequire(import.meta.url);
 
@@ -23,6 +24,29 @@ export function deriveShared(contractShared, resolveVersion) {
     if (v) out.push({ name, requiredRange: `^${v}`, singleton: true });
   }
   return out;
+}
+
+/**
+ * El mínimo contractVersion que provee TODAS las capabilities que la miniapp usa
+ * (el máximo semver de sus "since"). Ignora lo que no está en el mapa (no es del host).
+ * Vacío → "0.0.0" (no usa capabilities del host → cualquier host sirve).
+ */
+export function deriveMinContractVersion(usedShared, usedNative, capabilitySince) {
+  const cs = capabilitySince ?? { shared: {}, native: {} };
+  const versions = [
+    ...usedShared.map((n) => cs.shared[n]),
+    ...usedNative.map((n) => cs.native[n]),
+  ].filter(Boolean);
+  if (versions.length === 0) return "0.0.0";
+  return semver.rsort([...versions])[0];
+}
+
+/** Floor del requiredRange de react-native del manifest.shared (opción ii). */
+export function reactNativeFloor(sharedEntries, fallback) {
+  const rn = sharedEntries.find((s) => s.name === "react-native");
+  if (!rn) return fallback;
+  const min = semver.minVersion(rn.requiredRange);
+  return min ? min.version : fallback;
 }
 
 /** Resuelve la versión instalada de un paquete en la miniapp (o null). */
@@ -83,8 +107,18 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     const manifestPath = path.resolve("manifest.json");
     const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
     manifest.shared = deriveShared(contract.shared, installedVersion);
-    manifest.minHostContract = { reactNative: contract.reactNative, contractVersion: contract.contractVersion };
     manifest.nativeModules = miniappNativeModules();
+    const usedShared = manifest.shared.map((s) => s.name);
+    if (contract.capabilitySince) {
+      // Preciso (opción B): el mínimo host que provee lo que la miniapp realmente usa.
+      manifest.minHostContract = {
+        reactNative: reactNativeFloor(manifest.shared, contract.reactNative),
+        contractVersion: deriveMinContractVersion(usedShared, manifest.nativeModules, contract.capabilitySince),
+      };
+    } else {
+      // Rollout-safe: contract viejo sin capabilitySince → conservador (built-against).
+      manifest.minHostContract = { reactNative: contract.reactNative, contractVersion: contract.contractVersion };
+    }
     writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
     console.log(`gen-manifest-shared: derived ${manifest.shared.length} shared dep(s) from contract v${contract.contractVersion} + ${manifest.nativeModules.length} native(s)`);
   }

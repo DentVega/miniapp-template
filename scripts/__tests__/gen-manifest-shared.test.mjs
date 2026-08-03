@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { deriveShared, parseAutolinkedNatives } from "../gen-manifest-shared.mjs";
+import { deriveShared, parseAutolinkedNatives, deriveMinContractVersion, reactNativeFloor } from "../gen-manifest-shared.mjs";
 
 // contract.shared del host; resolveVersion simula lo instalado en la miniapp.
 const contractShared = { react: "18.3.1", "react-native": "0.76.6", zustand: "5.0.14" };
@@ -39,4 +39,29 @@ test("parseAutolinkedNatives: solo deps con native code (android o ios no-null)"
 test("parseAutolinkedNatives: tolera config vacío", () => {
   assert.deepEqual(parseAutolinkedNatives({}), []);
   assert.deepEqual(parseAutolinkedNatives({ dependencies: {} }), []);
+});
+
+const SINCE = {
+  shared: { react: "0.1.0", "react-native": "0.1.0", "react-native-reanimated": "0.2.0" },
+  native: { "react-native-reanimated": "0.2.0", "react-native-mmkv": "0.3.0" },
+};
+
+test("deriveMinContractVersion: máximo de los since usados", () => {
+  assert.equal(deriveMinContractVersion(["react", "react-native"], [], SINCE), "0.1.0");
+  assert.equal(deriveMinContractVersion(["react-native-reanimated"], [], SINCE), "0.2.0");
+  assert.equal(deriveMinContractVersion([], ["react-native-mmkv"], SINCE), "0.3.0");
+  assert.equal(deriveMinContractVersion(["react"], ["react-native-mmkv"], SINCE), "0.3.0"); // el máximo
+});
+
+test("deriveMinContractVersion: ignora lo que no mapea; vacío → 0.0.0", () => {
+  assert.equal(deriveMinContractVersion(["no-existe"], [], SINCE), "0.0.0");
+});
+
+test("reactNativeFloor: floor del requiredRange (^0.76.6 → 0.76.6)", () => {
+  const shared = [{ name: "react-native", requiredRange: "^0.76.6", singleton: true }];
+  assert.equal(reactNativeFloor(shared, "9.9.9"), "0.76.6");
+});
+
+test("reactNativeFloor: sin react-native → fallback", () => {
+  assert.equal(reactNativeFloor([{ name: "react", requiredRange: "^18.0.0" }], "0.76.6"), "0.76.6");
 });
