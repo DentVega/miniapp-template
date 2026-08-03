@@ -1,16 +1,26 @@
 name: Publish miniapp
 
-# Thin caller — the real build+publish lives in the reusable publish.yml, so a
-# fix there reaches every miniapp at once (no per-repo update). See publish.yml.
+# Thin caller — el build+publish real vive en el reusable publish.yml, y el
+# gate de compat en PRs vive en check-compat.yml. Un fix en cualquiera de esos
+# alcanza a todas las miniapps a la vez (referencian @main), sin update por repo.
 
 on:
   push:
     branches: [main]
     tags: ["v*"]
-  # Lets Backstage's "Deploy" button trigger a build+publish on demand.
+  # Deja que el botón "Deploy" de Backstage dispare un build+publish on demand.
   workflow_dispatch:
+  # Gate de compat en el PR (shift-left): la ✗ aparece antes del merge.
+  pull_request:
 
 jobs:
+  # Corre en PRs: chequea compat contra el host contract SIN buildear/publicar.
+  compat:
+    uses: DentVega/miniapp-template/.github/workflows/check-compat.yml@main
+    secrets: inherit
+
   publish:
+    # El publish NO corre en PRs — solo en push a main / tag / botón Deploy.
+    if: github.event_name != 'pull_request'
     uses: DentVega/miniapp-template/.github/workflows/publish.yml@main
     secrets: inherit
