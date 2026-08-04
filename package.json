@@ -7,7 +7,7 @@
     "start": "react-native webpack-start --port 9000",
     "bundle:android": "react-native webpack-bundle --platform android --entry-file src/Entry.tsx --bundle-output build/__MINIAPP_ID__.container.js.bundle --dev false",
     "typecheck": "tsc --noEmit",
-    "test": "jest"
+    "test": "node --test scripts/*.test.mjs scripts/__tests__/*.test.mjs && jest --passWithNoTests"
   },
   "dependencies": {
     "@dentvega/miniapp-contract": "^0.1.0",

@@ -13,5 +13,6 @@ README.es.md
 # scripts/ (which ARE synced, since they're not workflow files).
 .github/workflows/publish.yml
 .github/workflows/check-compat.yml
+.github/workflows/tests.yml
 .github/workflows/ci.yml
 .github/workflows/template-sync.yml
