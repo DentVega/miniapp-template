@@ -64,3 +64,5 @@ Node 20+, pnpm or npm. Access to **GitHub Packages** for `@org/miniapp-contract`
 ---
 
 <sub>Part of a portfolio/demo showcasing Module Federation micro-frontends for React Native.</sub>
+
+<!-- verify tests CI -->
