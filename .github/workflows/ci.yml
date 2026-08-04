@@ -15,12 +15,15 @@ on:
 
 jobs:
   # Corre en PRs: chequea compat contra el host contract SIN buildear/publicar.
+  # Se saltea en el repo del template (no es una miniapp: su manifest es un placeholder).
   compat:
+    if: github.repository != 'DentVega/miniapp-template'
     uses: DentVega/miniapp-template/.github/workflows/check-compat.yml@main
     secrets: inherit
 
   publish:
     # El publish NO corre en PRs — solo en push a main / tag / botón Deploy.
-    if: github.event_name != 'pull_request'
+    # Tampoco en el repo del template (no se publica a sí mismo).
+    if: github.event_name != 'pull_request' && github.repository != 'DentVega/miniapp-template'
     uses: DentVega/miniapp-template/.github/workflows/publish.yml@main
     secrets: inherit
