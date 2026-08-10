@@ -1,6 +1,10 @@
 # Miniapp-owned files — the sync must NEVER overwrite these.
 src/Screen.tsx
 manifest.json
+# package.json es miniapp-owned (name/version/deps + bundle scripts con el id real,
+# no el placeholder __MINIAPP_ID__ del template) → el 3-way merge choca siempre que
+# package.json cambie en el template. Igual que manifest.json: no sincronizar.
+package.json
 README.md
 README.es.md
 .template-sync
