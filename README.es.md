@@ -1,6 +1,6 @@
 # miniapp-template
 
-> **Plantilla GitHub** para crear una nueva **miniapp** — un **remote federado de Re.Pack** que el host de React Native consume bajo demanda. El scaffolder de [Backstage](https://github.com/DentVega/backstage-web) genera un repo nuevo desde esta plantilla; la CI de la miniapp buildea el chunk federado y lo publica al registro.
+> **Plantilla GitHub** para crear una nueva **miniapp** — un **remote federado de Re.Pack** que el host de React Native consume bajo demanda. El scaffolder de [Backstage](https://github.com/DentVega/backstage-web) genera un repo nuevo desde esta plantilla; la CI de la miniapp buildea el chunk federado para **android e iOS** y publica ambos al registro.
 
 **🌐 English:** [README.md](./README.md) · **Demo de la plataforma:** [backstage-web-blond.vercel.app](https://backstage-web-blond.vercel.app)
 
@@ -27,7 +27,7 @@ rspack.config.mjs       Config Re.Pack / Module Federation (expone ./Entry)
 src/Entry.tsx           Entry de federación — recibe capabilities acotadas, protege el acceso
 src/Screen.tsx          La UI de la feature de la miniapp
 scripts/                Helpers de build + publish
-.github/workflows/      CI: buildea el chunk federado, publica a Backstage
+.github/workflows/      CI: buildea el chunk federado para android + iOS (iOS best-effort), publica ambos a Backstage
 ```
 
 ## Crear una miniapp desde ella
@@ -43,7 +43,8 @@ pnpm start        # dev server del remote en :9000
 
 - Edita `src/Screen.tsx` (tu feature) y `src/Entry.tsx` (capability requerida).
 - Mantén `manifest.json` en sync (id, version, deps compartidas, capabilities).
-- El dev server sirve el chunk en `http://localhost:9000/<id>.container.js.bundle`; el pipeline de CI lo buildea y publica la URL a Backstage para que el host la resuelva.
+- El dev server sirve el chunk en `http://localhost:9000/<id>.container.js.bundle`; el pipeline de CI buildea los bundles de android + iOS y publica ambas URLs a Backstage para que el host las resuelva (iOS es best-effort — si el build de iOS falla, no bloquea el publish de android).
+- ¿Necesitás un build estático de una sola plataforma en vez del dev server? `pnpm bundle:android` (→ `build/__MINIAPP_ID__.container.js.bundle`) o `pnpm bundle:ios` (→ `build/ios/__MINIAPP_ID__.container.js.bundle`).
 
 ## Contrato y seguridad
 
