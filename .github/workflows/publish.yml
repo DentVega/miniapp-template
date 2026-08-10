@@ -63,21 +63,42 @@ jobs:
           BACKSTAGE_URL: ${{ secrets.BACKSTAGE_URL }}
           COMPAT_ENFORCE: ${{ vars.COMPAT_ENFORCE }}
 
-      - name: Build chunk
+      - name: Build chunks (android + ios)
+        # Ambos son chunks JS de Module Federation (sin nativo) → se buildean para
+        # cualquier miniapp. iOS es best-effort: un fallo iOS NO bloquea el publish
+        # de android (el crítico para prod).
         run: |
           ID=$(node -p "require('./manifest.json').id")
-          echo "Building miniapp: $ID"
+          echo "Building miniapp: $ID (android)"
           pnpm exec react-native webpack-bundle --platform android \
             --entry-file src/Entry.tsx \
             --bundle-output "build/${ID}.container.js.bundle" --dev false
+          echo "Building miniapp: $ID (ios)"
+          pnpm exec react-native webpack-bundle --platform ios \
+            --entry-file src/Entry.tsx \
+            --bundle-output "build/ios/${ID}.container.js.bundle" --dev false \
+            || echo "iOS build failed — se publicará solo android"
 
-      - name: Zip build output
-        # Zip the FLAT contents of the emitted dir (container + chunks at the
-        # root) so the host can resolve chunks beside the container.
-        run: cd build/generated/android && zip -r "$GITHUB_WORKSPACE/build.zip" .
+      - name: Zip build outputs
+        # Zip the FLAT contents of each emitted dir (container + chunks at the
+        # root) so the host can resolve chunks beside the container. iOS va en su
+        # propio zip → el registry lo guarda en el subfolder ios/.
+        run: |
+          cd build/generated/android && zip -r "$GITHUB_WORKSPACE/android.zip" . && cd "$GITHUB_WORKSPACE"
+          if [ -d build/generated/ios ]; then
+            cd build/generated/ios && zip -r "$GITHUB_WORKSPACE/ios.zip" . && cd "$GITHUB_WORKSPACE"
+          fi
 
       - name: Publish to Backstage
-        run: node scripts/publish.mjs build.zip
+        # publish.mjs (sincronizado vía template-sync) publica ambos chunks a la
+        # MISMA versión. Una miniapp con el publish.mjs viejo (single-zip) ignora
+        # el 2º arg → publica solo android (degradación segura, Capa 1 vs Capa 2 lag).
+        run: |
+          if [ -f ios.zip ]; then
+            node scripts/publish.mjs android.zip ios.zip
+          else
+            node scripts/publish.mjs android.zip
+          fi
         env:
           BACKSTAGE_URL: ${{ secrets.BACKSTAGE_URL }}
           PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}

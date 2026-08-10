@@ -6,6 +6,7 @@
   "scripts": {
     "start": "react-native webpack-start --port 9000",
     "bundle:android": "react-native webpack-bundle --platform android --entry-file src/Entry.tsx --bundle-output build/__MINIAPP_ID__.container.js.bundle --dev false",
+    "bundle:ios": "react-native webpack-bundle --platform ios --entry-file src/Entry.tsx --bundle-output build/ios/__MINIAPP_ID__.container.js.bundle --dev false",
     "typecheck": "tsc --noEmit",
     "test": "node --test scripts/*.test.mjs scripts/__tests__/*.test.mjs && jest --passWithNoTests"
   },
