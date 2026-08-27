@@ -18,6 +18,8 @@ on:
         required: true
       PUBLISH_TOKEN:
         required: true
+      MINIAPP_SIGN_KEY:
+        required: false
 
 jobs:
   publish:
@@ -102,3 +104,4 @@ jobs:
         env:
           BACKSTAGE_URL: ${{ secrets.BACKSTAGE_URL }}
           PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          MINIAPP_SIGN_KEY: ${{ secrets.MINIAPP_SIGN_KEY }}
