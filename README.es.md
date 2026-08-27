@@ -50,6 +50,8 @@ pnpm start        # dev server del remote en :9000
 
 `Entry` recibe `MiniappEntryProps` de `@org/miniapp-contract`: **capabilities acotadas, nunca credenciales crudas**. Si falta el permiso requerido → pantalla de "acceso no autorizado".
 
+Cada chunk publicado lleva un hash de **integridad sha256** (Backstage lo calcula server-side; el host lo verifica antes de montar). La **firma de chunks** (autenticidad Ed25519, sobre la integridad) está en el roadmap: la CI de acá firmará el chunk con un secret por-repo `MINIAPP_SIGN_KEY` y mandará un campo `signature` al publicar. Backstage ya la acepta y la sirve — el `publish.mjs` de este template todavía no firma.
+
 ## Requisitos
 
 Node 20+, pnpm o npm. Acceso a **GitHub Packages** para `@org/miniapp-contract` y `@org/ui-kit` (`.npmrc` usa `${GITHUB_TOKEN}` con `read:packages` — nunca un token hardcodeado).
