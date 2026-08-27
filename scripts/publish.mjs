@@ -18,6 +18,7 @@
  */
 import { readFileSync } from "node:fs";
 import { nextVersion } from "./version.mjs";
+import { signChunk } from "./sign-chunk.mjs";
 
 const androidZip = process.argv[2];
 const iosZip = process.argv[3]; // opcional
@@ -57,11 +58,16 @@ try {
 const version = nextVersion(latest, want);
 
 async function upload(zipPath, platform) {
+  const zipBytes = readFileSync(zipPath);
   const form = new FormData();
-  form.set("file", new Blob([readFileSync(zipPath)]), "build.zip");
+  form.set("file", new Blob([zipBytes]), "build.zip");
   form.set("version", String(version));
   form.set("manifest", JSON.stringify({ ...manifest, version }));
   form.set("platform", platform);
+  // Firma opcional del chunk (Ed25519). Sin MINIAPP_SIGN_KEY, signChunk devuelve null
+  // y se publica sin firma (degradación segura mientras se despliega la firma).
+  const signed = signChunk({ zipBytes, id, platform, privateKeyB64url: process.env.MINIAPP_SIGN_KEY });
+  if (signed) form.set("signature", signed.signature);
   const res = await fetch(`${backstageUrl}/api/miniapps/${id}/upload`, {
     method: "POST",
     headers: { authorization: `Bearer ${token}` },
@@ -72,7 +78,8 @@ async function upload(zipPath, platform) {
     console.error(`publish [${platform}] failed: HTTP ${res.status} ${body}`);
     process.exit(1);
   }
-  console.log(`published ${id}@${version} [${platform}] (latest was ${latest ?? "none"}): ${body}`);
+  const signedTag = signed ? " [signed]" : "";
+  console.log(`published ${id}@${version} [${platform}]${signedTag} (latest was ${latest ?? "none"}): ${body}`);
 }
 
 await upload(androidZip, "android");
