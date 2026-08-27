@@ -50,7 +50,7 @@ pnpm start        # dev server del remote en :9000
 
 `Entry` recibe `MiniappEntryProps` de `@org/miniapp-contract`: **capabilities acotadas, nunca credenciales crudas**. Si falta el permiso requerido → pantalla de "acceso no autorizado".
 
-Cada chunk publicado lleva un hash de **integridad sha256** (Backstage lo calcula server-side; el host lo verifica antes de montar). La **firma de chunks** (autenticidad Ed25519, sobre la integridad) está en el roadmap: la CI de acá firmará el chunk con un secret por-repo `MINIAPP_SIGN_KEY` y mandará un campo `signature` al publicar. Backstage ya la acepta y la sirve — el `publish.mjs` de este template todavía no firma.
+Cada chunk publicado lleva un hash de **integridad sha256** (Backstage lo calcula server-side; el host lo verifica antes de montar). Sobre eso, la **firma de chunks** (autenticidad Ed25519) ya está integrada: `scripts/publish.mjs` firma el chunk y manda un campo `signature` **cuando el secret por-repo `MINIAPP_SIGN_KEY` está seteado** (sin él, publica sin firma — seguro). El host verifica la firma contra un trust bundle firmado por el root.
 
 ## Requisitos
 
