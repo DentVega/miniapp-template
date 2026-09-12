@@ -68,6 +68,11 @@ async function upload(zipPath, platform) {
   const containerPath = `build/generated/${platform}/${id}.container.js.bundle`;
   const signed = signChunk({ containerPath, id, platform, privateKeyB64url: process.env.MINIAPP_SIGN_KEY });
   if (signed) form.set("signature", signed.signature);
+  // Atribución del audit log de Backstage: quién disparó este publish en CI.
+  // GITHUB_ACTOR / GITHUB_SHA / GITHUB_REPOSITORY son env-vars auto de GitHub Actions.
+  if (process.env.GITHUB_ACTOR) form.set("actor", process.env.GITHUB_ACTOR);
+  if (process.env.GITHUB_SHA) form.set("commit", process.env.GITHUB_SHA);
+  if (process.env.GITHUB_REPOSITORY) form.set("repo", process.env.GITHUB_REPOSITORY);
   const res = await fetch(`${backstageUrl}/api/miniapps/${id}/upload`, {
     method: "POST",
     headers: { authorization: `Bearer ${token}` },
