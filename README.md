@@ -54,7 +54,7 @@ Every published chunk carries a **sha256 integrity** hash (Backstage computes it
 
 ## Requirements
 
-Node 20+, pnpm or npm. Access to **GitHub Packages** for `@org/miniapp-contract` and `@org/ui-kit` (`.npmrc` uses `${GITHUB_TOKEN}` with `read:packages` — never a hardcoded token).
+Node 20+, pnpm or npm. `@dentvega/miniapp-contract` and `@dentvega/ui-kit` install from the **public npm registry** — no token or registry config needed.
 
 ## Related repos
 

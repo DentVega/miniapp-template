@@ -11,8 +11,8 @@
     "test": "node --test scripts/*.test.mjs scripts/__tests__/*.test.mjs && jest --passWithNoTests"
   },
   "dependencies": {
-    "@dentvega/miniapp-contract": "^0.1.0",
-    "@dentvega/ui-kit": "^0.1.0"
+    "@dentvega/miniapp-contract": "^0.4.1",
+    "@dentvega/ui-kit": "^0.1.1"
   },
   "peerDependencies": {
     "react": "*",
