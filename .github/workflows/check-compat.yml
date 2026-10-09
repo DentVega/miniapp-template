@@ -26,15 +26,8 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: Install deps (GitHub Packages)
-        # pnpm ignora el ${TOKEN} de un .npmrc committeado; escribimos la auth a
-        # un ~/.npmrc con el token literal. @dentvega/* son públicos, así que el
-        # GITHUB_TOKEN automático alcanza para leerlos.
-        run: |
-          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
-          pnpm install --frozen-lockfile=false
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install deps
+        run: pnpm install --frozen-lockfile=false
 
       - name: Compat gate (miniapp → host contract)
         # Mismo GUARD que publish.yml: si los scripts todavía no llegaron a este

@@ -15,12 +15,8 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      - name: Install deps (GitHub Packages)
-        run: |
-          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
-          pnpm install --frozen-lockfile=false
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install deps
+        run: pnpm install --frozen-lockfile=false
       - name: Typecheck
         run: pnpm typecheck
       - name: Script tests (node:test)
