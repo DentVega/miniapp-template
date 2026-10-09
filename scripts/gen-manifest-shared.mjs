@@ -8,7 +8,7 @@
  * manifest como está. Uso (en CI): BACKSTAGE_URL=... node scripts/gen-manifest-shared.mjs
  */
 import { createRequire } from "node:module";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { execSync } from "node:child_process";
@@ -49,13 +49,31 @@ export function reactNativeFloor(sharedEntries, fallback) {
   return min ? min.version : fallback;
 }
 
-/** Resuelve la versión instalada de un paquete en la miniapp (o null). */
-function installedVersion(name) {
+/**
+ * Resuelve la versión instalada de un paquete en la miniapp (o null).
+ * Si `exports` no expone ./package.json (p. ej. @dentvega/ui-kit), resuelve el
+ * entry y sube directorios hasta el package.json con ese `name`.
+ */
+export function installedVersion(name, req = require) {
   try {
-    return require(`${name}/package.json`).version;
+    return req(`${name}/package.json`).version;
   } catch {
-    return null;
+    // sigue con el fallback
   }
+  try {
+    let dir = path.dirname(req.resolve(name));
+    while (dir !== path.dirname(dir)) {
+      const file = path.join(dir, "package.json");
+      if (existsSync(file)) {
+        const pkg = JSON.parse(readFileSync(file, "utf8"));
+        if (pkg.name === name) return pkg.version ?? null;
+      }
+      dir = path.dirname(dir);
+    }
+  } catch {
+    // no instalado / sin entry resoluble
+  }
+  return null;
 }
 
 /**

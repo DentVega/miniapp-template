@@ -1,6 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { deriveShared, parseAutolinkedNatives, deriveMinContractVersion, reactNativeFloor } from "../gen-manifest-shared.mjs";
+import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { deriveShared, parseAutolinkedNatives, deriveMinContractVersion, reactNativeFloor, installedVersion } from "../gen-manifest-shared.mjs";
 
 // contract.shared del host; resolveVersion simula lo instalado en la miniapp.
 const contractShared = { react: "18.3.1", "react-native": "0.76.6", zustand: "5.0.14" };
@@ -64,4 +68,26 @@ test("reactNativeFloor: floor del requiredRange (^0.76.6 → 0.76.6)", () => {
 
 test("reactNativeFloor: sin react-native → fallback", () => {
   assert.equal(reactNativeFloor([{ name: "react", requiredRange: "^18.0.0" }], "0.76.6"), "0.76.6");
+});
+
+// Un paquete cuyo `exports` solo expone "." (como @dentvega/ui-kit) no deja
+// require("<pkg>/package.json") → ERR_PACKAGE_PATH_NOT_EXPORTED.
+function fixtureRequire() {
+  const root = mkdtempSync(path.join(tmpdir(), "gms-"));
+  const pkg = path.join(root, "node_modules", "@acme", "ui-kit");
+  mkdirSync(path.join(pkg, "dist"), { recursive: true });
+  writeFileSync(path.join(pkg, "package.json"), JSON.stringify({
+    name: "@acme/ui-kit", version: "0.1.1", type: "module",
+    exports: { ".": { import: "./dist/index.js", default: "./dist/index.js" } },
+  }));
+  writeFileSync(path.join(pkg, "dist", "index.js"), "export const x = 1;\n");
+  return createRequire(path.join(root, "index.js"));
+}
+
+test("installedVersion: lee la versión aunque exports no exponga ./package.json", () => {
+  assert.equal(installedVersion("@acme/ui-kit", fixtureRequire()), "0.1.1");
+});
+
+test("installedVersion: null si el paquete no está instalado", () => {
+  assert.equal(installedVersion("@acme/no-existe", fixtureRequire()), null);
 });
