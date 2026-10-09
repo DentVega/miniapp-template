@@ -9,11 +9,11 @@ importers:
   .:
     dependencies:
       '@dentvega/miniapp-contract':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: ^0.4.1
+        version: 0.4.1
       '@dentvega/ui-kit':
-        specifier: ^0.1.0
-        version: 0.1.0(react-native@0.76.6(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@react-native-community/cli-server-api@15.0.1)(@types/react@18.3.31)(react@18.3.1))(react@18.3.1)
+        specifier: ^0.1.1
+        version: 0.1.1(react-native@0.76.6(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@react-native-community/cli-server-api@15.0.1)(@types/react@18.3.31)(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@babel/core':
         specifier: ^7.25.2
@@ -785,11 +785,11 @@ packages:
       webpack:
         optional: true
 
-  '@dentvega/miniapp-contract@0.1.0':
-    resolution: {integrity: sha512-IJ7Oue0RF58eXAJrX0d0pMkh16jObmMDEPjY+Yg7jbfZukelp69DlzVH9tIGnJG0S7WyISxVBJhpc1CL7qOfpA==, tarball: https://npm.pkg.github.com/download/@dentvega/miniapp-contract/0.1.0/752eccf8cd92b06819519f52080ce8ac4dae8879}
+  '@dentvega/miniapp-contract@0.4.1':
+    resolution: {integrity: sha512-9gQGyhShPCv6kZDMCc/Wr5Ma8KpUTfH+W1nw9wHL9Ko/4vqbYNDdP/ydojGnnJcgCChTUzz8cYnI1tShgu1NAQ==}
 
-  '@dentvega/ui-kit@0.1.0':
-    resolution: {integrity: sha512-AJD2fpzWf4yWWpP5WDWSqt/BbJ4+YJF4JdnYMuDQcEwirTJC3osT8hoaOPwlvsalIuTVPFPFMEhDql2CRoXJZA==, tarball: https://npm.pkg.github.com/download/@dentvega/ui-kit/0.1.0/b8b3b76010076f52991919ad6614f45c8949542c}
+  '@dentvega/ui-kit@0.1.1':
+    resolution: {integrity: sha512-5gY1fO2iMPHyvMZcfNl0lF9gj7XtdTuQwaCPLXzCe49E9EYe9Yd+ppOxa9lGK+BkhwjofT9eu8OVp18S26dd9g==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -5205,9 +5205,11 @@ snapshots:
       - uglify-js
       - utf-8-validate
 
-  '@dentvega/miniapp-contract@0.1.0': {}
+  '@dentvega/miniapp-contract@0.4.1':
+    dependencies:
+      semver: 7.8.5
 
-  '@dentvega/ui-kit@0.1.0(react-native@0.76.6(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@react-native-community/cli-server-api@15.0.1)(@types/react@18.3.31)(react@18.3.1))(react@18.3.1)':
+  '@dentvega/ui-kit@0.1.1(react-native@0.76.6(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@react-native-community/cli-server-api@15.0.1)(@types/react@18.3.31)(react@18.3.1))(react@18.3.1)':
     dependencies:
       react: 18.3.1
       react-native: 0.76.6(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@react-native-community/cli-server-api@15.0.1)(@types/react@18.3.31)(react@18.3.1)
