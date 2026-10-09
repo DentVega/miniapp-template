@@ -5,6 +5,9 @@ manifest.json
 # no el placeholder __MINIAPP_ID__ del template) → el 3-way merge choca siempre que
 # package.json cambie en el template. Igual que manifest.json: no sincronizar.
 package.json
+# El lockfile sale del package.json de cada miniapp (que no se sincroniza): traer el
+# del template solo produce conflictos en el 3-way merge.
+pnpm-lock.yaml
 README.md
 README.es.md
 .template-sync

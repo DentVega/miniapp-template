@@ -48,7 +48,7 @@ pnpm start        # remote dev server on :9000
 
 ## Contract & security
 
-`Entry` receives `MiniappEntryProps` from `@org/miniapp-contract`: **scoped capabilities, never raw credentials**. If the required permission is missing → an "unauthorized access" screen.
+`Entry` receives `MiniappEntryProps` from `@dentvega/miniapp-contract`: **scoped capabilities, never raw credentials**. If the required permission is missing → an "unauthorized access" screen.
 
 Every published chunk carries a **sha256 integrity** hash (Backstage computes it server-side; the host verifies it before mounting). On top of that, **chunk signing** (Ed25519 authenticity) is wired in: `scripts/publish.mjs` signs the chunk and sends a `signature` field **when the per-repo secret `MINIAPP_SIGN_KEY` is set** (without it, it publishes unsigned — safe). The host verifies the signature against a root-signed trust bundle.
 
